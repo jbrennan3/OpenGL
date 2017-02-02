@@ -27,6 +27,9 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 // Window dimensions
 const GLuint WIDTH = 800, HEIGHT = 600;
 
+// Globals
+GLfloat mixValue = 0.2f;
+
 void render(void) {
     // Clear the screen with black before rendering update.
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -85,9 +88,10 @@ int main(int argc, const char * argv[]) {
     Shader ourShader("shaders/vertex.vs", "shaders/fragment.frag");
  
     // Loading Textures
-    GLuint texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
+    GLuint texture1;
+    GLuint texture2;
+    glGenTextures(1, &texture1);
+    glBindTexture(GL_TEXTURE_2D, texture1);
     // Set any texture wrapping/filtering options
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // basic texture wrapping
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -97,6 +101,21 @@ int main(int argc, const char * argv[]) {
     // Load and generate the texture
     int imgwidth, imgheight, bpp;
     unsigned char* image = stbi_load( "images/container.jpg", &imgwidth, &imgheight, &bpp, 3);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imgwidth, imgheight, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    stbi_image_free( image ); // don't forget to free
+    glBindTexture(GL_TEXTURE_2D, 0);
+    // Texture 2 Parameters
+    glGenTextures(1, &texture2);
+    glBindTexture(GL_TEXTURE_2D, texture2);
+    // Set any texture wrapping/filtering options
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // basic texture wrapping
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // Set texture filtering
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);    
+    // Load and generate the texture
+    image = stbi_load( "images/awesomeface.png", &imgwidth, &imgheight, &bpp, 3);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imgwidth, imgheight, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
     glGenerateMipmap(GL_TEXTURE_2D);
     stbi_image_free( image ); // don't forget to free
@@ -147,8 +166,16 @@ int main(int argc, const char * argv[]) {
         glClear(GL_COLOR_BUFFER_BIT);
 
         // Bind Texture
-        glBindTexture(GL_TEXTURE_2D, texture);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture1);
+        glUniform1i(glGetUniformLocation(ourShader.Program, "ourTexture1"), 0);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, texture2);
+        glUniform1i(glGetUniformLocation(ourShader.Program, "ourTexture2"), 1);
         
+        // Set value of uniform mix
+        glUniform1f(glGetUniformLocation(ourShader.Program, "mixValue"), mixValue);
+
         // Activate shaders
         ourShader.Use();
 
@@ -163,6 +190,7 @@ int main(int argc, const char * argv[]) {
     // De-allocate resources
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &EBO);
     // Terminate GLFW
     glfwTerminate();
     return 0;
@@ -174,6 +202,16 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         std::cout << "user exit." << std::endl;
         glfwSetWindowShouldClose(window, GL_TRUE);
+    }
+    if (key == GLFW_KEY_UP && action == GLFW_PRESS) {
+        mixValue += 0.1f;
+        if (mixValue >= 1.0f)
+            mixValue = 1.0f;
+    }
+    if (key == GLFW_KEY_DOWN && action == GLFW_PRESS) {
+        mixValue -= 0.1f;
+        if (mixValue < 0.0f)
+            mixValue = 0.0f;
     }
 }
 
