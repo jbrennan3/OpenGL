@@ -1,7 +1,7 @@
 CC = g++
-FLAGS = -g -Wno-deprecated
-LIB = -L/usr/local/
-INC = -I/usr/local/
+FLAGS =-g -Wno-deprecated
+LIB = -L/usr/local/lib
+INC = -I/usr/local/include
 
 # Testing for OSX vs Linux
 OS = $(shell uname -s)
